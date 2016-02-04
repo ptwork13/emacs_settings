@@ -1,0 +1,159 @@
+; -*- Mode: Emacs-Lisp ; Coding: utf-8 -*-
+;;MY EMACS SETTINGS
+
+;; ------------------------------------------------------------------------
+;; @ load-path
+
+;; load-pathの追加関数
+(defun add-to-load-path (&rest paths)
+  (let (path)
+    (dolist (path paths paths)
+      (let ((default-directory (expand-file-name (concat user-emacs-directory path))))
+        (add-to-list 'load-path default-directory)
+        (if (fboundp 'normal-top-level-add-subdirs-to-load-path)
+            (normal-top-level-add-subdirs-to-load-path))))))
+
+;; load-pathに追加するフォルダ
+;; 2つ以上フォルダを指定する場合の引数 => (add-to-load-path "elisp" "xxx" "xxx")
+(add-to-load-path "elisp")
+
+;; ------------------------------------------------------------------------
+;; @ general
+
+;; common lisp
+(require 'cl)
+
+;; 文字コード
+(set-language-environment "Japanese")
+(let ((ws window-system))
+  (cond ((eq ws 'w32)
+         (prefer-coding-system 'utf-8-unix)
+         (set-default-coding-systems 'utf-8-unix)
+         (setq file-name-coding-system 'sjis)
+         (setq locale-coding-system 'utf-8))
+        ((eq ws 'ns)
+         (require 'ucs-normalize)
+         (prefer-coding-system 'utf-8-hfs)
+         (setq file-name-coding-system 'utf-8-hfs)
+         (setq locale-coding-system 'utf-8-hfs))))
+
+;; Windowsで英数と日本語にMeiryoを指定
+;; Macで英数と日本語にRictyを指定
+(let ((ws window-system))
+  (cond ((eq ws 'w32)
+         (set-face-attribute 'default nil
+                             :family "Meiryo"  ;; 英数
+                             :height 100)
+         (set-fontset-font nil 'japanese-jisx0208 (font-spec :family "Meiryo")))  ;; 日本語
+        ((eq ws 'ns)
+         (set-face-attribute 'default nil
+                             :family "Ricty"  ;; 英数
+                             :height 140)
+         (set-fontset-font nil 'japanese-jisx0208 (font-spec :family "Ricty")))))  ;; 日本語
+
+;;---表示などいろいろ---
+;; スタートアップ非表示
+;;(setq inhibit-startup-screen t)
+;; scratchの初期メッセージ消去
+(setq initial-scratch-message "")
+;; ツールバー非表示
+;;(tool-bar-mode -1)
+;; メニューバーを非表示
+;;(menu-bar-mode -1)
+;; スクロールバー非表示
+;;(set-scroll-bar-mode nil)
+;; タイトルバーにファイルのフルパス表示
+(setq frame-title-format
+      (format "%%f - Emacs@%s" (system-name)))
+;; 行番号表示
+(global-linum-mode t)
+(set-face-attribute 'linum nil
+                    :foreground "#800"
+                    :height 0.9)
+;; 行番号フォーマット
+;;(setq linum-format "%4d")
+
+;; 括弧の範囲内を強調表示
+(show-paren-mode t)
+(setq show-paren-delay 0)
+(setq show-paren-style 'expression)
+
+;; 括弧の範囲色
+(set-face-background 'show-paren-match-face "#500")
+
+
+; 行番号表示
+;(require 'linum)
+;(global-linum-mode)
+
+ (add-to-list 'load-path "~/.emacs.d/cl-lib/")
+ (require 'cl-lib)
+
+
+;;----yatexの設定----
+
+(cond
+ ((locate-library "yatex")
+  (autoload 'yatex-mode "yatex" "Yet Another LaTeX mode" t)
+
+  ; 拡張子が .tex の時は自動的に yatex-mode に
+  (setq auto-mode-alist (cons '("\\.tex$" . yatex-mode) auto-mode-alist))
+
+  (setq YaTeX-kanji-code 4)           ; 漢字コードを utf8 に
+  (setq tex-command "platex")         ; tex の実行コマンド
+  (setq dvi2-command "dviout")        ; プレビューアのコマンド
+  (setq bibtex-command "jbibtex")     ; BibTeX のコマンド
+  (setq section-name "documentclass") ; LaTeX2e では documentclass を使うのが標準
+  (setq YaTeX-nervous nil)            ; 辞書はユーザ辞書でよいと思う
+
+  ; yatex ロード時の設定
+  (add-hook 'yatex-mode-load-hook
+            (function
+             (lambda ()
+               ; 日本語入力中でもタイプセットできるように 
+               (wrap-function-to-control-ime 'YaTeX-typeset-menu t "P"))))))
+
+;;自動改行を切る
+(add-hook ' yatex-mode-hook 
+ '(
+    lambda () (auto-fill-mode -1)
+  )
+)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#212526" "#ff4b4b" "#b4fa70" "#fce94f" "#729fcf" "#ad7fa8" "#8cc4ff" "#eeeeec"])
+ '(custom-enabled-themes (quote (wombat))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+
+;;PHPの環境設定
+
+;;load-pathの設定
+(setq load-path
+      (append
+       (list
+        (expand-file-name "~/.emacs.d/elisp/")
+	(expand-file-name "~/.emcss.d/conf/"))
+       load-path))
+
+;; auto-install
+(require 'auto-install)
+(setq auto-install-directory "~/.emacs.d/elisp/") ;Emacs Lispをインストールするディレクトリの指定
+(auto-install-update-emacswiki-package-name t)
+(auto-install-compatibility-setup) ;install-elisp.elとコマンド名を同期
+
+;; auto-complete
+(require 'auto-complete)
+(require 'auto-complete-config)
+(global-auto-complete-mode t)
+
+(load-theme 'wombat t)
